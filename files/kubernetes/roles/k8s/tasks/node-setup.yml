@@ -1,0 +1,26 @@
+---
+- name: Remove environment file
+  file:
+    path: /etc/environment
+    state: absent
+
+- name: Add /etc/kubernetes/manifests directory
+  file:
+    path: "/etc/kubernetes/manifests"
+    state: directory
+
+- name: Check if worker nodes has already been added to cluster.
+  stat:
+    path: "/etc/kubernetes/kubelet.conf"
+  register: kubernetes_node_stat
+
+- name: Copy join-node.yaml file
+  template:
+    src: join-node.j2
+    dest: "{{ kubernetes_config_node_file }}"
+  when: not kubernetes_node_stat.stat.exists
+
+- name: Join worker node to Kubernetes master
+  command: >
+    kubeadm join --config={{ kubernetes_config_node_file }}
+  when: not kubernetes_node_stat.stat.exists

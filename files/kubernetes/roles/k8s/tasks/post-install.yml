@@ -1,0 +1,75 @@
+---
+# Dashboard
+- name: Check if Kubernetes Dashboard UI service already exists.
+  shell: kubectl get services --namespace kubernetes-dashboard | grep -q kubernetes-dashboard
+  changed_when: false
+  failed_when: false
+  #  register: kubernetes_dashboard_service
+  when: kubernetes_enable_web_ui | bool
+
+- name: 'Download {{ kubernetes_web_ui_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_web_ui_manifest_file }}'
+    dest: '{{ kubernetes_web_ui_manifest_file }}'
+    validate_certs: no
+  # environment:
+  #   https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: Enable the Kubernetes Web Dashboard UI (if configured).
+  command: "kubectl create -f {{ kubernetes_web_ui_manifest_file }}"
+  when:
+    - kubernetes_enable_web_ui | bool
+    - not kubernetes_init_stat.stat.exists
+
+# Metrics
+- name: 'Download {{ kubernetes_metrics_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_metrics_manifest_file }}'
+    dest: '{{ kubernetes_metrics_manifest_file }}'
+    validate_certs: no
+
+- name: Configure Metrics server.
+  command: '{{ item }}'
+  with_items:
+    - 'kubectl create -f {{ kubernetes_metrics_manifest_file }}'
+  register: metrics_result
+  changed_when: "'created' in metrics_result.stdout"
+  when: not kubernetes_init_stat.stat.exists
+
+# Ingress-nginx
+- name: 'Download {{ kubernetes_ingress_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_ingress_manifest_file }}'
+    dest: '{{ kubernetes_ingress_manifest_file }}'
+    validate_certs: no
+  # environment:
+  #   https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: Configure Ingress-nginx.
+  command: '{{ item }}'
+  with_items:
+    - 'kubectl create -f {{ kubernetes_ingress_manifest_file }}'
+  register: ingress_result
+  changed_when: "'created' in ingress_result.stdout"
+  when: not kubernetes_init_stat.stat.exists
+
+# Pod Security Policy
+- name: Copy PodSecurityPolicy files
+  copy:
+    src: "{{ item.src | default('./files' + item.dest) }}"
+    dest: "{{ item.dest }}"
+  loop:
+    - { dest: "/tmp/podsecuritypolicy.yml" }
+    - { dest: "/tmp/clusterrole.yml" }
+    - { dest: "/tmp/clusterrolebinding.yml" }
+    - { dest: "/tmp/rolebinding.yml" }
+  when: not kubernetes_init_stat.stat.exists
+
+- name: Apply PodSecurityPolicies
+  shell: "kubectl apply -f {{ item }}"
+  loop:
+    - "/tmp/podsecuritypolicy.yml"
+    - "/tmp/clusterrole.yml"
+    - "/tmp/clusterrolebinding.yml"
+    - "/tmp/rolebinding.yml"
+  when: not kubernetes_init_stat.stat.exists

@@ -1,0 +1,13 @@
+- name: Install CRI-O package
+  zypper:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - cri-o
+    - cri-tools
+
+- name: Ensure crio is started and enabled at boot.
+  service:
+    name: crio
+    state: started
+    enabled: true

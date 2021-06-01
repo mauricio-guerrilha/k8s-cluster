@@ -1,0 +1,66 @@
+# Set up additioanl master nodes.
+- name: Get the kubeadm init phase command from the Kubernetes master.
+  shell: 'kubeadm init phase upload-certs --upload-certs | tail -1'
+  changed_when: false
+  when: kubernetes_role == 'master'
+  register: kubernetes_phase_command_result
+
+- name: Set the ca_certs kubeadm join node worker command globally.
+  set_fact:
+    kubernetes_phase_command: >
+      {{ kubernetes_phase_command_result.stdout }}
+  when: kubernetes_phase_command_result.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['all'] }}"
+
+# Get ca_certs kubeadm.
+- name: Get the ca_cert kubeadm join command from the Kubernetes master.
+  shell: kubeadm token create --ttl 30m --print-join-command --certificate-key {{ kubernetes_phase_command_result.stdout }} | awk '{ print $7 }'
+  changed_when: false
+  when: kubernetes_role == 'master'
+  register: kubernetes_ca_cert_master_command_result
+
+- name: Set the ca_certs kubeadm join node worker command globally.
+  set_fact:
+    kubernetes_ca_cert_master_command: >
+      {{ kubernetes_ca_cert_master_command_result.stdout }}
+  when: kubernetes_ca_cert_master_command_result.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['all'] }}"
+
+# Get token kubeadm
+- name: Get the token kubeadm join command from the Kubernetes master.
+  shell: kubeadm token create --ttl 30m --print-join-command --certificate-key {{ kubernetes_phase_command_result.stdout }} | awk '{ print $5 }'
+  changed_when: false
+  when: kubernetes_role == 'master'
+  register: kubernetes_token_master_command_result
+
+- name: Set the token kubeadm join node worker command globally.
+  set_fact:
+    kubernetes_token_master_command: >
+      {{ kubernetes_token_master_command_result.stdout }}
+  when: kubernetes_token_master_command_result.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['all'] }}"
+
+
+
+
+
+# - name: Get the kubeadm join command from the Kubernetes master.
+#   command: 'kubeadm token create --ttl 30m --print-join-command --certificate-key {{ kubernetes_phase_command_result.stdout }}'
+#   changed_when: false
+#   when: kubernetes_role == 'master'
+#   register: kubernetes_join_master_command_result
+
+# - name: Set the kubeadm join node master command globally.
+#   set_fact:
+#     kubernetes_join_master_command: >
+#       {{ kubernetes_join_master_command_result.stdout }}
+#   when: kubernetes_join_master_command_result.stdout is defined
+#   delegate_to: "{{ item }}"
+#   delegate_facts: true
+#   with_items: "{{ groups['all'] }}"

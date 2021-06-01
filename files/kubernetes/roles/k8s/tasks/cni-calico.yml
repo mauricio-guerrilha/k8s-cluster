@@ -1,0 +1,17 @@
+# Calico
+- name: 'Download {{ kubernetes_calico_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_calico_manifest_file }}'
+    dest: '{{ kubernetes_calico_manifest_file }}'
+    validate_certs: no
+  # environment:
+  #   https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: Configure Calico networking.
+  command: '{{ item }}'
+  with_items:
+    - 'kubectl create -f {{ kubernetes_calico_manifest_file }}'
+  register: calico_result
+  changed_when: "'created' in calico_result.stdout"
+  when:
+    - not kubernetes_init_stat.stat.exists

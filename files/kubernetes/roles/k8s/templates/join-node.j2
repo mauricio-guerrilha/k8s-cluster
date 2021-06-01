@@ -1,0 +1,19 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: JoinConfiguration
+discovery:
+  bootstrapToken:
+    apiServerEndpoint: {{ kubernetes_control_plane_endpoint }}:6443
+    caCertHashes:
+    - {{ kubernetes_ca_cert_command }}
+    token: {{ kubernetes_token_command }}
+nodeRegistration:
+  kubeletExtraArgs:
+    node-ip: {{ hostvars[inventory_hostname].inventory_hostname }}
+    container-runtime: remote
+    container-runtime-endpoint: {{ kubernetes_cri_socket }}
+    log-dir: {{ kubernetes_log_dir }}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: {{ kubernetes_cgroup_driver }}
+runtimeRequestTimeout: {{ kubernetes_runtime_request_timeout }}

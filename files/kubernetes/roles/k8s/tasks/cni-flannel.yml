@@ -1,0 +1,26 @@
+# Flannel
+- name: 'Download {{ kubernetes_flannel_manifest_file_rbac }}'
+  get_url:
+    url: '{{ download_kubernetes_flannel_manifest_file_rbac }}'
+    dest: '{{ kubernetes_flannel_manifest_file_rbac }}'
+    validate_certs: no
+  environment:
+    https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: 'Download {{ kubernetes_flannel_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_flannel_manifest_file }}'
+    dest: '{{ kubernetes_flannel_manifest_file }}'
+    validate_certs: no
+  environment:
+    https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: Configure Flannel networking.
+  command: '{{ item }}'
+  with_items:
+    - 'kubectl apply -f {{ kubernetes_flannel_manifest_file_rbac }}'
+    - 'kubectl apply -f {{ kubernetes_flannel_manifest_file }}'
+  register: flannel_result
+  changed_when: "'created' in flannel_result.stdout"
+  when:
+    - not kubernetes_init_stat.stat.exists

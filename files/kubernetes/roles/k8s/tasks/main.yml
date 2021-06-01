@@ -1,0 +1,53 @@
+---
+# tasks file for k8s
+- include_tasks: install-k8s.yml
+
+- name: Ensure kubelet is started and enabled at boot.
+  service:
+    name: kubelet
+    state: started
+    enabled: true
+
+- name: Ensure docker is stop and disabled at boot.
+  service:
+    name: docker
+    state: stopped
+    enabled: false
+
+- name: Check if Kubernetes has already been initialized.
+  stat:
+    path: "/etc/kubernetes/admin.conf"
+  register: kubernetes_init_stat
+
+- name: Check if certs has already been added to master node.
+  stat:
+    path: "/etc/kubernetes/pki/"
+  register: kubernetes_cert_stat
+
+- include_tasks: certificates.yml
+  when:
+    - kubernetes_role == 'master'
+    - not kubernetes_cert_stat.stat.exists
+
+# Set up master.
+- include_tasks: master-setup.yml
+  when: kubernetes_role == 'master'
+
+# Setup worker node
+- include_tasks: node-token.yml
+
+- include_tasks: node-setup.yml
+  when: kubernetes_role == 'node'
+
+# Set up additional master
+- include_tasks: master-token.yml
+
+#- name: Wait to warmup nodes
+#  pause:
+#    minutes: 1
+
+- include_tasks: additional-master.yml
+  when: kubernetes_role == 'add_master'
+
+- include_tasks: post-install.yml
+  when: kubernetes_role == 'master'

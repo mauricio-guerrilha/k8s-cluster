@@ -1,0 +1,31 @@
+# Get ca_certs kubeadm.
+- name: Get the ca_cert kubeadm join command from the Kubernetes master.
+  shell: kubeadm token create --ttl 30m --print-join-command | awk '{ print $7 }'
+  changed_when: false
+  when: kubernetes_role == 'master'
+  register: kubernetes_ca_cert_command_result
+
+- name: Set the ca_certs kubeadm join node worker command globally.
+  set_fact:
+    kubernetes_ca_cert_command: >
+      {{ kubernetes_ca_cert_command_result.stdout }}
+  when: kubernetes_ca_cert_command_result.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['all'] }}"
+
+# Get token kubeadm
+- name: Get the token kubeadm join command from the Kubernetes master.
+  shell: kubeadm token create --ttl 30m --print-join-command | awk '{ print $5 }'
+  changed_when: false
+  when: kubernetes_role == 'master'
+  register: kubernetes_token_command_result
+
+- name: Set the token kubeadm join node worker command globally.
+  set_fact:
+    kubernetes_token_command: >
+      {{ kubernetes_token_command_result.stdout }}
+  when: kubernetes_token_command_result.stdout is defined
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  with_items: "{{ groups['all'] }}"

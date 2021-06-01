@@ -1,0 +1,64 @@
+- name: Add {{ kubernetes_ca_dir }} directory
+  file:
+    path: "{{ kubernetes_ca_dir }}/etcd"
+    state: directory
+
+- name: Copy config certificates file
+  template:
+    src: "{{ item }}"
+    dest: "/tmp"
+  loop:
+    - apiserver.cnf
+    - peer-server.cnf
+
+- name: Create Certificates Authority - CA
+  shell:
+    cmd: "{{ item }}"
+    chdir: "{{ kubernetes_ca_dir }}"
+  loop:
+    - openssl genrsa -out ca.key 2048
+    - openssl req -x509 -new -nodes -key ca.key -subj "/CN=kubernetes" -days {{ kubernetes_ca_expirate_days }} -out ca.crt
+    - openssl genrsa -out front-proxy-ca.key 2048
+    - openssl req -x509 -new -nodes -key front-proxy-ca.key -subj "/CN=front-proxy-ca" -days {{ kubernetes_ca_expirate_days }} -out front-proxy-ca.crt
+
+- name: Create etcd Certificates Authority - CA
+  shell:
+    cmd: "{{ item }}"
+    chdir: "{{ kubernetes_ca_dir }}/etcd/"
+  loop:
+    - openssl genrsa -out ca.key 2048
+    - openssl req -x509 -new -nodes -key ca.key -subj "/CN=etcd-ca" -days {{ kubernetes_ca_expirate_days }} -out ca.crt
+
+- name: Sign Certificates
+  shell:
+    cmd: "{{ item }}"
+    chdir: "{{ kubernetes_ca_dir }}"
+  loop:
+    - openssl req -newkey rsa:2048 -nodes -keyout apiserver.key -days {{ kubernetes_certs_expirate_days }} -out apiserver.csr -config /tmp/apiserver.cnf
+    - openssl x509 -req -in apiserver.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out apiserver.crt -days {{ kubernetes_certs_expirate_days }} -extensions v3_req -extfile /tmp/apiserver.cnf
+    - openssl req -newkey rsa:2048 -nodes -keyout apiserver-kubelet-client.key -subj "/O=system:masters/CN=kube-apiserver-kubelet-client" -days {{ kubernetes_certs_expirate_days }} -out apiserver-kubelet-client.csr
+    - openssl x509 -req -in apiserver-kubelet-client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out apiserver-kubelet-client.crt -days {{ kubernetes_certs_expirate_days }}
+    - openssl req -newkey rsa:2048 -nodes -keyout front-proxy-client.key -subj "/CN=front-proxy-client" -days {{ kubernetes_certs_expirate_days }} -out front-proxy-client.csr
+    - openssl x509 -req -in front-proxy-client.csr -CA front-proxy-ca.crt -CAkey front-proxy-ca.key -CAcreateserial -out front-proxy-client.crt -days {{ kubernetes_certs_expirate_days }}
+    - openssl req -newkey rsa:2048 -nodes -keyout apiserver-etcd-client.key -subj "/O=system:masters/CN=kube-apiserver-etcd-client" -days {{ kubernetes_certs_expirate_days }} -out apiserver-etcd-client.csr
+    - openssl x509 -req -in apiserver-etcd-client.csr -CA etcd/ca.crt -CAkey etcd/ca.key -CAcreateserial -out apiserver-etcd-client.crt -days {{ kubernetes_certs_expirate_days }}
+
+- name: Sign etcd Certificates
+  shell:
+    cmd: "{{ item }}"
+    chdir: "{{ kubernetes_ca_dir }}/etcd/"
+  loop:
+    - openssl req -newkey rsa:2048 -nodes -keyout healthcheck-client.key -subj "/O=system:masters/CN=kube-etcd-healthcheck-client" -days {{ kubernetes_certs_expirate_days }} -out healthcheck-client.csr
+    - openssl x509 -req -in healthcheck-client.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out healthcheck-client.crt -days {{ kubernetes_certs_expirate_days }}
+    - openssl req -newkey rsa:2048 -nodes -keyout peer.key -days {{ kubernetes_certs_expirate_days }} -out peer.csr -config /tmp/peer-server.cnf
+    - openssl x509 -req -in peer.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out peer.crt -days {{ kubernetes_certs_expirate_days }} -extensions v3_req -extfile /tmp/peer-server.cnf
+    - openssl req -newkey rsa:2048 -nodes -keyout server.key -days {{ kubernetes_certs_expirate_days }} -out server.csr -config /tmp/peer-server.cnf
+    - openssl x509 -req -in server.csr -CA ca.crt -CAkey ca.key -CAcreateserial -out server.crt -days {{ kubernetes_certs_expirate_days }} -extensions v3_req -extfile /tmp/peer-server.cnf
+
+- name: Create ServiceAccount cert and pub
+  shell:
+    cmd: "{{ item }}"
+    chdir: "{{ kubernetes_ca_dir }}"
+  loop:
+    - openssl genrsa -out sa.key 2048
+    - openssl rsa -in sa.key -pubout -out sa.pub

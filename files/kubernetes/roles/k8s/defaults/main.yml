@@ -1,0 +1,86 @@
+---
+# defaults file for k8s
+kubernetes_packages:
+  - name: kubelet
+    state: present
+  - name: kubectl
+    state: present
+  - name: kubeadm
+    state: present
+  - name: kubernetes-cni
+    state: present
+
+kubernetes_version: '1.21'
+kubernetes_version_rhel_package: '1.20.5'
+kubernetes_dashboard_manifest_version: '2.2.0'
+kubernetes_calico_manifest_version: '3.18'
+kubernetes_cilium_manifest_version: '1.9'
+kubernetes_metrics_manifest_version: '0.3.7'
+kubernetes_ingress_manifest_version: '0.44.0'
+
+kubernetes_role: node
+
+kubernetes_https_proxy: ''
+
+kubernetes_kubelet_extra_args: ""
+kubernetes_kubeadm_init_extra_opts: "--upload-certs"
+kubernetes_join_command_extra_opts: ""
+
+kubernetes_cgroup_driver: "systemd"
+kubernetes_cri_socket: "unix:///var/run/crio/crio.sock"
+kubernetes_runtime_request_timeout: "10m"
+kubernetes_log_dir: "/var/log/kubernetes"
+
+kubernetes_ca_expirate_days: "10000"
+kubernetes_certs_expirate_days: "3650"
+
+kubernetes_ca_dir: "/etc/kubernetes/pki"
+kubernetes_config_init_file: /tmp/init-master.yaml
+kubernetes_config_node_file: /tmp/join-node.yaml
+kubernetes_config_master_file: /tmp/join-master.yaml
+
+kubernetes_allow_pods_on_master: false
+kubernetes_enable_web_ui: true
+download_kubernetes_web_ui_manifest_file: "https://raw.githubusercontent.com/kubernetes/dashboard/v{{ kubernetes_dashboard_manifest_version }}/aio/deploy/recommended.yaml"
+kubernetes_web_ui_manifest_file: /tmp/recommended.yaml
+
+kubernetes_pod_network:
+  # Flannel CNI.
+#  cni: 'flannel'
+#  cidr: '10.244.0.0/16'
+  # Calico CNI.
+  cni: 'calico'
+  cidr: '10.12.0.0/14'
+  # Cilium CNI.
+  #cni: 'cilium'
+  #cidr: '10.0.0.0/8'
+
+kubernetes_service_network: '10.16.0.0/16'
+kubernetes_service_ip: '10.16.0.1'
+
+kubernetes_apiserver_advertise_address: '{{ hostvars[inventory_hostname].inventory_hostname }}'
+kubernetes_apiserver_enable_admission_plugins: 'NodeRestriction,PodSecurityPolicy'
+kubernetes_version_kubeadm: 'stable-{{ kubernetes_version }}'
+kubernetes_ignore_preflight_errors: 'all'
+
+# Flannel config files.
+download_kubernetes_flannel_manifest_file_rbac: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/k8s-manifests/kube-flannel-rbac.yml
+download_kubernetes_flannel_manifest_file: https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-flannel.yml
+kubernetes_flannel_manifest_file_rbac: /tmp/kube-flannel-rbac.yml
+kubernetes_flannel_manifest_file: /tmp/kube-flannel.yml
+
+# Calico config files
+download_kubernetes_calico_manifest_file: "https://docs.projectcalico.org/v{{ kubernetes_calico_manifest_version }}/manifests/calico.yaml"
+kubernetes_calico_manifest_file: /tmp/calico.yaml
+
+# Cilium config files
+download_kubernetes_cilium_manifest_file: "https://raw.githubusercontent.com/cilium/cilium/v{{ kubernetes_cilium_manifest_version }}/install/kubernetes/quick-install.yaml"
+kubernetes_cilium_manifest_file: /tmp/cilium.yaml
+
+# Metrics config files
+download_kubernetes_metrics_manifest_file: "https://github.com/kubernetes-sigs/metrics-server/releases/download/v{{ kubernetes_metrics_manifest_version }}/components.yaml"
+kubernetes_metrics_manifest_file: /tmp/metrics-server.yaml
+
+# Ingress-nginx config files
+download_kubernetes_ingress_manifest_file: "https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v{{ kubernetes_ingress_manifest_version }}/deploy/static/provider/baremetal/deploy.yaml"
+kubernetes_ingress_manifest_file: /tmp/ingress-nginx.yaml

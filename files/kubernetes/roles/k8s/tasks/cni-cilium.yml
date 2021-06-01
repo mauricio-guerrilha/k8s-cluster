@@ -1,0 +1,17 @@
+# Cilium
+- name: 'Download {{ kubernetes_cilium_manifest_file }}'
+  get_url:
+    url: '{{ download_kubernetes_cilium_manifest_file }}'
+    dest: '{{ kubernetes_cilium_manifest_file }}'
+    validate_certs: no
+  environment:
+    https_proxy: '{{ kubernetes_https_proxy }}'
+
+- name: Configure Cilium networking.
+  command: '{{ item }}'
+  with_items:
+    - 'kubectl create -f {{ kubernetes_cilium_manifest_file }}'
+  register: cilium_result
+  changed_when: "'created' in cilium_result.stdout"
+  when:
+    - not kubernetes_init_stat.stat.exists

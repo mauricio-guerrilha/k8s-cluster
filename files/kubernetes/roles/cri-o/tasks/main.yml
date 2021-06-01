@@ -1,0 +1,3 @@
+---
+# tasks file for cri-o
+- include_tasks: install-crio.yml

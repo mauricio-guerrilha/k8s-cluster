@@ -1,0 +1,23 @@
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: ClusterConfiguration
+apiServer:
+  extraArgs:
+    advertise-address: {{ hostvars[inventory_hostname].inventory_hostname }}
+    enable-admission-plugins: {{ kubernetes_apiserver_enable_admission_plugins }}
+controlPlaneEndpoint: {{ kubernetes_control_plane_endpoint }}:6443
+networking:
+  podSubnet: {{ kubernetes_pod_network.cidr }}
+  serviceSubnet: {{ kubernetes_service_network }}
+---
+apiVersion: kubeadm.k8s.io/v1beta2
+kind: InitConfiguration
+localAPIEndpoint:
+  advertiseAddress: {{ hostvars[inventory_hostname].inventory_hostname }}
+  bindPort: 6443
+nodeRegistration:
+  criSocket: {{ kubernetes_cri_socket }}
+---
+apiVersion: kubelet.config.k8s.io/v1beta1
+kind: KubeletConfiguration
+cgroupDriver: {{ kubernetes_cgroup_driver }}
+runtimeRequestTimeout: {{ kubernetes_runtime_request_timeout }}

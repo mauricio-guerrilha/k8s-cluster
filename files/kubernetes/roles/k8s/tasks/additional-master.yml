@@ -1,0 +1,29 @@
+- name: Check if Kubernetes master node has already been initialized.
+  stat:
+    path: "/etc/kubernetes/admin.conf"
+  register: kubernetes_init_master_stat
+
+- name: Copy join-master.yaml file
+  template:
+    src: join-master.j2
+    dest: "{{ kubernetes_config_master_file }}"
+  when: not kubernetes_init_master_stat.stat.exists
+
+- name: Join master node to Kubernetes master
+  command: >
+    kubeadm join --v=5 --config={{ kubernetes_config_master_file }}
+  when: not kubernetes_init_stat.stat.exists
+
+- name: Ensure .kube directory exists.
+  file:
+    path: ~/.kube
+    state: directory
+    mode: 0755
+
+- name: Symlink the kubectl admin.conf to ~/.kube/conf.
+  file:
+    src: "/etc/kubernetes/admin.conf"
+    dest: ~/.kube/config
+    state: link
+    mode: 0644
+    force: yes
