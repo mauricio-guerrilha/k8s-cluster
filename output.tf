@@ -15,6 +15,11 @@ output "workers_ips_privados" {
 }
 
 resource "local_file" "ansible-inventory" {
+  depends_on = [
+    aws_instance.k8s-worker,
+    aws_instance.k8s-master,
+    aws_instance.k8s-infra
+  ]
   content = templatefile("./files/inventory.tpl",
   {
     first-master = aws_instance.k8s-master.0.private_ip,
@@ -24,7 +29,8 @@ resource "local_file" "ansible-inventory" {
     worker2 = aws_instance.k8s-worker.1.private_ip,
     worker3 = aws_instance.k8s-worker.2.private_ip,
     infra1 = aws_instance.k8s-infra.0.private_ip,
-    infra2 = aws_instance.k8s-infra.1.private_ip
+    infra2 = aws_instance.k8s-infra.1.private_ip,
+    aws_ssh_user = var.aws_ssh_user
   }
   )
   filename = "./files/kubernetes/inventory"

@@ -1,5 +1,6 @@
 ---
 # defaults file for k8s
+kubernetes_yum_arch: "x86_64"
 kubernetes_packages:
   - name: kubelet
     state: present

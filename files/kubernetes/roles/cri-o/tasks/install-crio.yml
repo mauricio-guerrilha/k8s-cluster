@@ -1,5 +1,16 @@
+- name: Configure cri-o repo
+  get_url:
+    dest: "{{ item.dest }}"
+    url: "{{ item.url }}"
+    mode: 0750
+    owner: root
+    group: root
+  loop:
+    - { url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable/CentOS_7/devel:kubic:libcontainers:stable.repo", dest: "/etc/yum.repos.d/devel:kubic:libcontainers:stable.repo" }
+    - { url: "https://download.opensuse.org/repositories/devel:/kubic:/libcontainers:/stable:/cri-o:/1.21/CentOS_7/devel:kubic:libcontainers:stable:cri-o:1.21.repo", dest: "/etc/yum.repos.d/devel:kubic:libcontainers:stable:cri-o:1.21.repo"}
+
 - name: Install CRI-O package
-  zypper:
+  yum:
     name: "{{ item }}"
     state: latest
   loop:

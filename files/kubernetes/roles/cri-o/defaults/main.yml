@@ -1,2 +1,38 @@
 ---
 # defaults file for cri-o
+# Kernel modules.
+cri_o_modprobe:
+  - { state: "present", option: "br_netfilter" }
+  - { state: "present", option: "overlay" }
+
+# Entries for sysctl.
+cri_o_sysctl:
+  - { state: "present", name: "kernel.pid_max", value: "4194303" }
+  - { state: "present", name: "net.bridge.bridge-nf-call-arptables", value: "1" }
+#  - { state: "present", name: "net.bridge.bridge-nf-call-ip6tables", value: "1" }
+  - { state: "present", name: "net.bridge.bridge-nf-call-iptables", value: "1" }
+  - { state: "present", name: "net.ipv4.ip_forward", value: "1" }
+#  - { state: "present", name: "net.ipv6.conf.all.disable_ipv6", value: "1" }
+#  - { state: "present", name: "net.ipv6.conf.all.forwarding", value: "0" }
+#  - { state: "present", name: "net.ipv6.conf.default.disable_ipv6", value: "1" }
+#  - { state: "present", name: "net.ipv6.conf.lo.disable_ipv6", value: "1" }
+  - { state: "present", name: "vm.min_free_kbytes", value: "65536" }
+  - { state: "present", name: "vm.swappiness", value: "0" }
+  - { state: "present", name: "fs.may_detach_mounts", value: "1" }
+  - { state: "present", name: "fs.inotify.max_user_watches", value: "1048576" }
+  - { state: "present", name: "net.ipv4.ip_local_port_range", value: "12000    62000" }
+  - { state: "present", name: "net.core.somaxconn", value: "10000" }
+  - { state: "present", name: "net.ipv4.tcp_max_syn_backlog", value: "10000" }
+  - { state: "present", name: "net.core.netdev_max_backlog", value: "40000" }
+  - { state: "present", name: "net.ipv4.tcp_tw_recycle", value: "0" }
+  - { state: "present", name: "net.ipv4.tcp_tw_reuse", value: "1" }
+  - { state: "present", name: "net.ipv4.tcp_fin_timeout", value: "15" }
+  - { state: "present", name: "net.ipv4.tcp_slow_start_after_idle", value: "0" }
+  - { state: "present", name: "net.core.rmem_max", value: "16777216" }
+  - { state: "present", name: "net.core.wmem_max", value: "16777216" }
+  - { state: "present", name: "net.core.rmem_default", value: "16777216" }
+  - { state: "present", name: "net.core.wmem_default", value: "16777216" }
+  - { state: "present", name: "net.ipv4.tcp_rmem", value: "4096 87380 16777216" }
+  - { state: "present", name: "net.ipv4.tcp_wmem", value: "4096 87380 16777216" }
+  - { state: "present", name: "net.ipv4.tcp_mem", value: "1638400 1638400 1638400" }
+  - { state: "present", name: "net.core.default_qdisc", value: "fq_codel" }

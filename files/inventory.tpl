@@ -3,8 +3,8 @@ all:
    kubernetes_apiserver_advertise_address: ${first-master}
    kubernetes_control_plane_endpoint: ${first-master}
    ansible_ssh_common_args: -oStrictHostKeyChecking=no
-   ansible_user: ec2-user
-   ansible_ssh_private_key_file: /home/ec2-user/id_rsa
+   ansible_user: ${aws_ssh_user}
+   ansible_ssh_private_key_file: /home/${aws_ssh_user}/id_rsa
  children:
    master_nodes:
      hosts:

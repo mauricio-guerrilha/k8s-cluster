@@ -1,6 +1,12 @@
 ---
 # tasks file for k8s
+- include_tasks: sysctl-setup.yml
+
 - include_tasks: install-k8s.yml
+
+- name: Just force systemd to reread configs
+  systemd:
+    daemon_reload: yes
 
 - name: Ensure kubelet is started and enabled at boot.
   service:
@@ -8,11 +14,11 @@
     state: started
     enabled: true
 
-- name: Ensure docker is stop and disabled at boot.
-  service:
-    name: docker
-    state: stopped
-    enabled: false
+#- name: Ensure docker is stop and disabled at boot.
+#  service:
+#    name: docker
+#    state: stopped
+#    enabled: false
 
 - name: Check if Kubernetes has already been initialized.
   stat:

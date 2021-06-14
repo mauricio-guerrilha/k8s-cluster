@@ -1,3 +1,31 @@
 ---
 # tasks file for cri-o
+
+- name: tweak modeprobe entries
+  copy:
+    src: crio-modules-load.conf
+    dest: "/etc/modules-load.d/crio.conf"
+    mode: "0644"
+  notify:
+    - cri_o | systemctl restart systemd-modules-load.service
+
+- name: Ensure kernel modules are loaded
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - br_netfilter
+    - overlay
+
+- name: tweak sysctl entries
+  sysctl:
+    name: "{{ item.name }}"
+    value: "{{ item.value }}"
+    state: "{{ item.state }}"
+    sysctl_file: "/etc/sysctl.conf"
+    reload: false
+  loop: "{{ cri_o_sysctl }}"
+  notify:
+    - cri_o | sysctl --system
+
 - include_tasks: install-crio.yml
